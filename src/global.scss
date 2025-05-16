@@ -35,3 +35,29 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+
+body {
+  background: linear-gradient(135deg, #FAFAFA, #d3d3d3, #b0b0b0, #FAFAFA);
+  background-size: 400% 400%;
+  animation: auraBackground 10s ease infinite;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes auraBackground {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+ion-content {
+  --padding-bottom: 56px; /* Ajusta este valor si tu tab-bar tiene otro alto */
+}

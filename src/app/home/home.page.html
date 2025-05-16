@@ -1,20 +1,56 @@
-<ion-header [translucent]="true">
+<ion-menu side="start" menuId="main-menu" contentId="main-content">
+  <ion-header>
+    <ion-toolbar color="light">
+      <ion-title>Menú</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <ion-list>
+      <ion-item routerLink="/tasks">Tareas de hoy</ion-item>
+      <ion-item routerLink="/details">Task Details</ion-item>
+      <ion-item routerLink="/settings">Configuración</ion-item>
+      <ion-item routerLink="/account">Cuenta</ion-item>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<ion-header>
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
     <ion-title>
-      Blank
+      <div class="titulo-remindly">Re-Mindly</div>
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+<ion-content id="main-content">
+  <div class="task-list">
+    <div class="task-card">☑️ Hacer la cama</div>
+    <div class="task-card">📚 Estudiar minería de datos</div>
+    <div class="task-card">🧼 Lavar la loza</div>
+    <div class="task-card">📩 Enviar informe</div>
   </div>
 </ion-content>
+
+<ion-footer>
+  <ion-tab-bar slot="bottom">
+    <ion-tab-button tab="tasks" routerLink="/tasks" routerDirection="root">
+      <ion-icon name="checkmark-circle-outline"></ion-icon>
+      <ion-label>Tareas</ion-label>
+    </ion-tab-button>
+    <ion-tab-button tab="details" routerLink="/details" routerDirection="root">
+      <ion-icon name="document-text-outline"></ion-icon>
+      <ion-label>Detalles</ion-label>
+    </ion-tab-button>
+    <ion-tab-button tab="settings" routerLink="/settings" routerDirection="root">
+      <ion-icon name="settings-outline"></ion-icon>
+      <ion-label>Config</ion-label>
+    </ion-tab-button>
+    <ion-tab-button tab="account" routerLink="/account" routerDirection="root">
+      <ion-icon name="person-outline"></ion-icon>
+      <ion-label>Cuenta</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+</ion-footer>
