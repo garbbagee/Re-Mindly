@@ -1,0 +1,25 @@
+<ion-content>
+  <div class="container">
+    <h1 class="title">Re-Mindly</h1>
+    <p class="subtitle">Bienvenido de nuevo, ¡a concentrarse!</p>
+
+    <form (ngSubmit)="login()" class="form-container">
+      <ion-item>
+        <ion-label position="floating">Email</ion-label>
+        <ion-input type="email" [(ngModel)]="email" name="email" required></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Contraseña</ion-label>
+        <ion-input type="password" [(ngModel)]="password" name="password" required></ion-input>
+      </ion-item>
+
+      <ion-button expand="block" type="submit" class="register-btn">Iniciar sesión</ion-button>
+
+      <div class="redirect-register">
+        <span>¿No tienes cuenta?</span>
+        <a (click)="goToRegister()">Regístrate</a>
+      </div>
+    </form>
+  </div>
+</ion-content>

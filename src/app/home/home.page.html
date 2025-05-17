@@ -10,7 +10,7 @@
       <ion-item>Configuración</ion-item>
       <ion-item>Cuenta</ion-item>
       <ion-item>Acerca de</ion-item>
-      <ion-item>Cerrar sesión</ion-item>
+      <ion-item button (click)="logout()">Cerrar sesión</ion-item>
     </ion-list>
   </ion-content>
 </ion-menu>
@@ -35,11 +35,6 @@
     <div class="task-card">🧼 Lavar la loza</div>
     <div class="task-card">📩 Enviar informe</div>
   </div>
-
-  <!-- Botón para ir a Register -->
-  <ion-button expand="block" routerLink="/register" style="margin: 20px 0;">
-    Ir a Registro
-  </ion-button>
 </ion-content>
 
 <!-- 🔽 Tabs de navegación inferior (sin rutas activas) -->

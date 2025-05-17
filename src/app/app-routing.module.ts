@@ -11,12 +11,16 @@ const routes: Routes = [
     redirectTo: 'home',
     pathMatch: 'full'
   },
-    {
+  {
     path: 'register',
     loadComponent: () => import('./register/register.page').then(m => m.RegisterPage)
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./login/login.page').then(m => m.LoginPage)
   }
-
 ];
+
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })],
