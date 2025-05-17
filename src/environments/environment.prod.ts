@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  firebase: {
+  firebaseConfig: {
     apiKey: "AIzaSyBrNrT0Px0kqlOuGu2Vv-harzJDH5xHdp0",
     authDomain: "re-mindly.firebaseapp.com",
     projectId: "re-mindly",
