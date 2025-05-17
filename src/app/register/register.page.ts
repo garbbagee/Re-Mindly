@@ -26,4 +26,8 @@ export class RegisterPage {
       alert('Error en el registro: ' + error.message);
     }
   }
+
+  goToLogin() {
+    this.router.navigateByUrl('/login');
+  }
 }
