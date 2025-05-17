@@ -1,3 +1,4 @@
+<!-- 🍔 Menú hamburguesa (sin rutas funcionales) -->
 <ion-menu side="start" menuId="main-menu" contentId="main-content">
   <ion-header>
     <ion-toolbar color="light">
@@ -6,14 +7,15 @@
   </ion-header>
   <ion-content>
     <ion-list>
-      <ion-item routerLink="/tasks">Tareas de hoy</ion-item>
-      <ion-item routerLink="/details">Task Details</ion-item>
-      <ion-item routerLink="/settings">Configuración</ion-item>
-      <ion-item routerLink="/account">Cuenta</ion-item>
+      <ion-item>Configuración</ion-item>
+      <ion-item>Cuenta</ion-item>
+      <ion-item>Acerca de</ion-item>
+      <ion-item>Cerrar sesión</ion-item>
     </ion-list>
   </ion-content>
 </ion-menu>
 
+<!-- 🔝 Header -->
 <ion-header>
   <ion-toolbar>
     <ion-buttons slot="start">
@@ -25,6 +27,7 @@
   </ion-toolbar>
 </ion-header>
 
+<!-- 📝 Contenido principal -->
 <ion-content id="main-content">
   <div class="task-list">
     <div class="task-card">☑️ Hacer la cama</div>
@@ -32,25 +35,27 @@
     <div class="task-card">🧼 Lavar la loza</div>
     <div class="task-card">📩 Enviar informe</div>
   </div>
+
+  <!-- Botón para ir a Register -->
+  <ion-button expand="block" routerLink="/register" style="margin: 20px 0;">
+    Ir a Registro
+  </ion-button>
 </ion-content>
 
+<!-- 🔽 Tabs de navegación inferior (sin rutas activas) -->
 <ion-footer>
   <ion-tab-bar slot="bottom">
-    <ion-tab-button tab="tasks" routerLink="/tasks" routerDirection="root">
+    <ion-tab-button tab="tasks">
       <ion-icon name="checkmark-circle-outline"></ion-icon>
       <ion-label>Tareas</ion-label>
     </ion-tab-button>
-    <ion-tab-button tab="details" routerLink="/details" routerDirection="root">
+    <ion-tab-button tab="history">
+      <ion-icon name="time-outline"></ion-icon>
+      <ion-label>Historial</ion-label>
+    </ion-tab-button>
+    <ion-tab-button tab="details">
       <ion-icon name="document-text-outline"></ion-icon>
       <ion-label>Detalles</ion-label>
-    </ion-tab-button>
-    <ion-tab-button tab="settings" routerLink="/settings" routerDirection="root">
-      <ion-icon name="settings-outline"></ion-icon>
-      <ion-label>Config</ion-label>
-    </ion-tab-button>
-    <ion-tab-button tab="account" routerLink="/account" routerDirection="root">
-      <ion-icon name="person-outline"></ion-icon>
-      <ion-label>Cuenta</ion-label>
     </ion-tab-button>
   </ion-tab-bar>
 </ion-footer>

@@ -1,0 +1,49 @@
+ion-content {
+  --background: transparent;
+  display: flex;
+  justify-content: flex-start; /* contenido hacia arriba */
+  padding: 32px 16px 16px;
+  height: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 3rem;
+  font-weight: 900;
+  margin-top: 100px;   /* Bajamos el título */
+  margin-bottom: 0;
+  color: #3b3b3b;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  margin-top: 0;
+  color: #555;
+}
+
+.form-container {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 24px 20px;   /* padding para que no quede pegado */
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.register-btn {
+  margin-top: 12px;
+}
