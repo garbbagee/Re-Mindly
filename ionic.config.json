@@ -1,0 +1,7 @@
+{
+  "name": "Re-Mindly",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
