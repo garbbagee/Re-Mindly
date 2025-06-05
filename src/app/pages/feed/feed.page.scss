@@ -1,0 +1,40 @@
+.feed-content {
+  --background: var(--ion-color-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 16px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--ion-color-primary-contrast);
+}
+
+.main-content {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+h2 {
+  font-weight: 600;
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+}
+
+p {
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+
+ion-button {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
+  border-radius: 30px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+ion-button:hover {
+  --background: var(--ion-color-primary-shade);
+}

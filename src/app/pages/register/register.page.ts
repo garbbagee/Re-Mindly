@@ -1,25 +1,27 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [IonicModule, FormsModule, CommonModule],
+  imports: [CommonModule, FormsModule, IonicModule, RouterModule],
   templateUrl: './register.page.html',
   styleUrls: ['./register.page.scss'],
 })
 export class RegisterPage {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
   email = '';
   password = '';
   confirmPassword = '';
   error: string | null = null;
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   async register() {
     this.error = null;
@@ -31,10 +33,14 @@ export class RegisterPage {
 
     try {
       await this.authService.register(this.email, this.password);
-      // Al registrar, redirige a login
+      console.log('Registro exitoso. Redirigiendo a login...');
       await this.router.navigate(['/login']);
     } catch (err: any) {
       this.error = err.message || 'Error al registrarse';
     }
+  }
+
+  goToLogin() {
+    this.router.navigate(['/login']);
   }
 }
