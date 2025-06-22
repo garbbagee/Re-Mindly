@@ -31,10 +31,13 @@ export class TasksService {
     }
     
     const tasksRef = collection(this.firestore, 'tasks');
+    
+    // Consulta temporal sin orderBy para evitar el error de índice
+    // Una vez que se cree el índice, puedes volver a usar orderBy
     const q = query(
       tasksRef, 
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
+      // orderBy('createdAt', 'desc') // Comentado temporalmente
     );
     
     return new Observable(subscriber => {
@@ -52,6 +55,10 @@ export class TasksService {
             userId: data['userId']
           } as Task;
         });
+        
+        // Ordenar en el cliente temporalmente
+        tasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        
         subscriber.next(tasks);
       }, (error) => {
         console.error('Error getting tasks:', error);

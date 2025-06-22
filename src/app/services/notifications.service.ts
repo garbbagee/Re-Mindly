@@ -16,12 +16,36 @@ export interface ReminderNotification {
 })
 export class NotificationsService {
 
+  private isWeb = false;
+
   constructor(private platform: Platform) {
+    this.isWeb = this.platform.is('desktop') || this.platform.is('mobileweb');
     this.initializeNotifications();
   }
 
   private async initializeNotifications() {
-    // Solicitar permisos de notificación
+    if (this.isWeb) {
+      // En web, usar la API de notificaciones del navegador
+      await this.initializeWebNotifications();
+    } else {
+      // En dispositivos móviles, usar Capacitor
+      await this.initializeCapacitorNotifications();
+    }
+  }
+
+  private async initializeWebNotifications() {
+    try {
+      // Solicitar permisos para notificaciones web
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        console.log('Permisos de notificación web:', permission);
+      }
+    } catch (error) {
+      console.error('Error al solicitar permisos web:', error);
+    }
+  }
+
+  private async initializeCapacitorNotifications() {
     try {
       const permission = await LocalNotifications.requestPermissions();
       console.log('Permisos de notificación:', permission);
@@ -50,6 +74,54 @@ export class NotificationsService {
     scheduledTime: Date;
   }): Promise<boolean> {
     try {
+      if (this.isWeb) {
+        return this.scheduleWebNotification(reminder);
+      } else {
+        return this.scheduleCapacitorNotification(reminder);
+      }
+    } catch (error) {
+      console.error('Error al programar notificación:', error);
+      return false;
+    }
+  }
+
+  private async scheduleWebNotification(reminder: any): Promise<boolean> {
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const timeUntilNotification = reminder.scheduledTime.getTime() - Date.now();
+        
+        if (timeUntilNotification > 0) {
+          setTimeout(() => {
+            new Notification(reminder.title, {
+              body: reminder.description,
+              icon: '/assets/icon/favicon.png',
+              tag: `reminder-${reminder.id}`
+            });
+          }, timeUntilNotification);
+          
+          console.log(`Notificación web programada para: ${reminder.title} a las ${reminder.scheduledTime}`);
+          return true;
+        } else {
+          // Si la hora ya pasó, mostrar inmediatamente
+          new Notification(reminder.title, {
+            body: reminder.description,
+            icon: '/assets/icon/favicon.png',
+            tag: `reminder-${reminder.id}`
+          });
+          return true;
+        }
+      } else {
+        console.warn('Notificaciones web no disponibles o no permitidas');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error al programar notificación web:', error);
+      return false;
+    }
+  }
+
+  private async scheduleCapacitorNotification(reminder: any): Promise<boolean> {
+    try {
       const notification = {
         id: reminder.id,
         title: reminder.title,
@@ -72,7 +144,7 @@ export class NotificationsService {
       console.log(`Notificación programada para: ${reminder.title} a las ${reminder.scheduledTime}`);
       return true;
     } catch (error) {
-      console.error('Error al programar notificación:', error);
+      console.error('Error al programar notificación Capacitor:', error);
       return false;
     }
   }
@@ -81,6 +153,37 @@ export class NotificationsService {
    * Muestra una notificación inmediata (para pruebas)
    */
   async showImmediateNotification(title: string, body: string): Promise<boolean> {
+    try {
+      if (this.isWeb) {
+        return this.showWebNotification(title, body);
+      } else {
+        return this.showCapacitorNotification(title, body);
+      }
+    } catch (error) {
+      console.error('Error al mostrar notificación inmediata:', error);
+      return false;
+    }
+  }
+
+  private async showWebNotification(title: string, body: string): Promise<boolean> {
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+          body: body,
+          icon: '/assets/icon/favicon.png'
+        });
+        return true;
+      } else {
+        console.warn('Notificaciones web no disponibles o no permitidas');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error al mostrar notificación web:', error);
+      return false;
+    }
+  }
+
+  private async showCapacitorNotification(title: string, body: string): Promise<boolean> {
     try {
       const notification = {
         id: Date.now(),
@@ -99,7 +202,7 @@ export class NotificationsService {
 
       return true;
     } catch (error) {
-      console.error('Error al mostrar notificación inmediata:', error);
+      console.error('Error al mostrar notificación Capacitor:', error);
       return false;
     }
   }
@@ -109,11 +212,17 @@ export class NotificationsService {
    */
   async cancelNotification(notificationId: number): Promise<boolean> {
     try {
-      await LocalNotifications.cancel({
-        notifications: [{ id: notificationId }]
-      });
-      console.log(`Notificación ${notificationId} cancelada`);
-      return true;
+      if (this.isWeb) {
+        // En web, no podemos cancelar notificaciones programadas fácilmente
+        console.log('Cancelación de notificaciones web no implementada');
+        return true;
+      } else {
+        await LocalNotifications.cancel({
+          notifications: [{ id: notificationId }]
+        });
+        console.log(`Notificación ${notificationId} cancelada`);
+        return true;
+      }
     } catch (error) {
       console.error('Error al cancelar notificación:', error);
       return false;
@@ -125,16 +234,20 @@ export class NotificationsService {
    */
   async cancelAllNotifications(): Promise<boolean> {
     try {
-      // Obtener todas las notificaciones programadas y cancelarlas
-      const pendingNotifications = await this.getScheduledNotifications();
-      if (pendingNotifications.length > 0) {
-        const notificationIds = pendingNotifications.map(n => ({ id: n.id }));
-        await LocalNotifications.cancel({
-          notifications: notificationIds
-        });
+      if (this.isWeb) {
+        console.log('Cancelación de todas las notificaciones web no implementada');
+        return true;
+      } else {
+        const pendingNotifications = await this.getScheduledNotifications();
+        if (pendingNotifications.length > 0) {
+          const notificationIds = pendingNotifications.map(n => ({ id: n.id }));
+          await LocalNotifications.cancel({
+            notifications: notificationIds
+          });
+        }
+        console.log('Todas las notificaciones canceladas');
+        return true;
       }
-      console.log('Todas las notificaciones canceladas');
-      return true;
     } catch (error) {
       console.error('Error al cancelar todas las notificaciones:', error);
       return false;
@@ -146,8 +259,13 @@ export class NotificationsService {
    */
   async getScheduledNotifications(): Promise<any[]> {
     try {
-      const result = await LocalNotifications.getPending();
-      return result.notifications || [];
+      if (this.isWeb) {
+        console.log('Obtener notificaciones programadas no disponible en web');
+        return [];
+      } else {
+        const result = await LocalNotifications.getPending();
+        return result.notifications || [];
+      }
     } catch (error) {
       console.error('Error al obtener notificaciones programadas:', error);
       return [];
@@ -196,10 +314,35 @@ export class NotificationsService {
    */
   async areNotificationsEnabled(): Promise<boolean> {
     try {
-      const result = await LocalNotifications.checkPermissions();
-      return result.display === 'granted';
+      if (this.isWeb) {
+        return 'Notification' in window && Notification.permission === 'granted';
+      } else {
+        const result = await LocalNotifications.checkPermissions();
+        return result.display === 'granted';
+      }
     } catch (error) {
       console.error('Error al verificar permisos:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Solicita permisos de notificación
+   */
+  async requestPermissions(): Promise<boolean> {
+    try {
+      if (this.isWeb) {
+        if ('Notification' in window) {
+          const permission = await Notification.requestPermission();
+          return permission === 'granted';
+        }
+        return false;
+      } else {
+        const result = await LocalNotifications.requestPermissions();
+        return result.display === 'granted';
+      }
+    } catch (error) {
+      console.error('Error al solicitar permisos:', error);
       return false;
     }
   }
