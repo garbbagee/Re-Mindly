@@ -84,7 +84,7 @@
 </div>
 
 <!-- Task Modal -->
-<ion-modal #modal [isOpen]="isModalOpen" (didDismiss)="isModalOpen = false">
+<ion-modal #modal [isOpen]="isModalOpen" (didDismiss)="handleModalDismiss($event)">
   <ng-template>
     <ion-header>
       <ion-toolbar>
@@ -112,18 +112,25 @@
             <ion-select-option value="high">Alta</ion-select-option>
           </ion-select>
         </ion-item>
-        
+
         <ion-item>
           <ion-label>Fecha Límite</ion-label>
           <ion-datetime-button datetime="datetime"></ion-datetime-button>
         </ion-item>
-        
+
         <ion-modal [keepContentsMounted]="true">
           <ng-template>
-            <ion-datetime id="datetime" formControlName="dueDate" presentation="date-time"></ion-datetime>
+            <ion-datetime
+              id="datetime"
+              formControlName="dueDate"
+              presentation="date-time"
+              [showDefaultButtons]="true"
+              doneText="Hecho"
+              cancelText="Cancelar"
+            ></ion-datetime>
           </ng-template>
         </ion-modal>
-
+        
         <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="taskForm.invalid">
           {{ isEditMode ? 'Guardar Cambios' : 'Crear Tarea' }}
         </ion-button>

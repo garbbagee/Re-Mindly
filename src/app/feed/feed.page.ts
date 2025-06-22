@@ -11,6 +11,7 @@ import { NotificationsService } from '../services/notifications.service';
 import { trash, checkmarkCircle, add, logOutOutline, reorderTwoOutline, optionsOutline, timeOutline, notificationsOutline, ellipseOutline, closeCircleOutline } from 'ionicons/icons';
 import { Timestamp } from 'firebase/firestore';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { OverlayEventDetail } from '@ionic/core/components';
 
 @Component({
   selector: 'app-feed',
@@ -122,17 +123,31 @@ export class FeedPage implements OnInit, OnDestroy {
       return;
     }
     try {
-      await this.notificationsService.scheduleNotification(
-        '🔔 Notificación de Prueba',
-        '¡Si puedes leer esto, las notificaciones funcionan!',
-        new Date(Date.now() + 5 * 1000),
-        'test-task-id'
-      );
-      await this.showToast('Notificación de prueba programada en 5 segundos.');
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: 999,
+            title: 'Prueba básica',
+            body: 'Esto es una notificación local simple',
+            schedule: { at: new Date(Date.now() + 5000) },
+          }
+        ]
+      });
+      await this.showToast('Notificación básica programada en 5 segundos.');
     } catch (e) {
       await this.showToast('Error al programar la notificación', 'danger');
       console.error(e);
     }
+  }
+
+  private formatToIonicDateTime(date: Date): string {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   openNewTaskModal() {
@@ -140,7 +155,7 @@ export class FeedPage implements OnInit, OnDestroy {
     this.currentTaskId = null;
     this.taskForm.reset({
       priority: 'medium',
-      dueDate: new Date().toISOString()
+      dueDate: this.formatToIonicDateTime(new Date())
     });
     this.isModalOpen = true;
   }
@@ -152,7 +167,7 @@ export class FeedPage implements OnInit, OnDestroy {
       title: task.title,
       description: task.description,
       priority: task.priority,
-      dueDate: task.dueDate.toDate().toISOString()
+      dueDate: this.formatToIonicDateTime(task.dueDate.toDate())
     });
     this.isModalOpen = true;
   }
@@ -204,49 +219,72 @@ export class FeedPage implements OnInit, OnDestroy {
   }
   
   cancelModal() {
-    this.isModalOpen = false;
+    this.modal.dismiss(null, 'cancel');
   }
   
   async confirmModal() {
     if (this.taskForm.invalid) {
       return;
     }
-    const loading = await this.loadingController.create();
+    const loading = await this.loadingController.create({ message: 'Guardando...' });
     await loading.present();
 
     const formValue = this.taskForm.value;
+    const dueDate = new Date(formValue.dueDate);
 
     try {
       if (this.isEditMode && this.currentTaskId) {
-        const dueDate = new Date(formValue.dueDate);
-        const taskDataToUpdate: Partial<Task> = {
-          ...formValue,
-          dueDate: Timestamp.fromDate(dueDate)
-        };
+        const taskDataToUpdate: Partial<Task> = { ...formValue, dueDate: Timestamp.fromDate(dueDate) };
         await this.tasksService.updateTask(this.currentTaskId, taskDataToUpdate);
         await this.showToast('Tarea actualizada con éxito');
+        this.modal.dismiss(null, 'confirm');
       } else {
-        const dueDate = new Date(formValue.dueDate);
-        const taskDataToAdd = {
-          ...formValue,
-          dueDate: dueDate
-        };
+        const taskDataToAdd = { ...formValue, status: 'pending', dueDate: dueDate };
         const docRef = await this.tasksService.addTask(taskDataToAdd);
-        await this.notificationsService.scheduleNotification(
-          '¡Tarea pendiente!',
-          `Tienes una nueva tarea: ${formValue.title}`,
-          dueDate,
-          docRef.id
-        );
-        await this.showToast('Tarea creada con éxito');
+        await this.showToast('Tarea creada.');
+        
+        const timeDiff = dueDate.getTime() - Date.now();
+
+        this.modal.dismiss({ 
+          taskId: docRef.id, 
+          timeDiff: timeDiff > 0 ? timeDiff : 0,
+          title: formValue.title 
+        }, 'confirm');
       }
-      this.isModalOpen = false;
     } catch (error) {
-      console.error('Error confirming modal:', error);
-      const message = this.isEditMode ? 'Error al actualizar la tarea' : 'Error al crear la tarea';
-      await this.showToast(message, 'danger');
+      console.error('Error al guardar la tarea:', error);
+      await this.showToast('Error al guardar la tarea.', 'danger');
+      this.modal.dismiss(null, 'error');
     } finally {
       loading.dismiss();
+    }
+  }
+
+  async handleModalDismiss(event: Event) {
+    const ev = event as CustomEvent<OverlayEventDetail<{ taskId: string; timeDiff: number; title: string }>>;
+    this.isModalOpen = false; // Close the modal in the UI
+
+    if (ev.detail.role === 'confirm' && ev.detail.data) {
+      const { timeDiff, title } = ev.detail.data;
+      const scheduleDate = new Date(Date.now() + timeDiff);
+      
+      console.log('--- Modal Cerrado. Intentando programar con payload idéntico al de la prueba. ---');
+      try {
+        await LocalNotifications.schedule({
+          notifications: [{
+            id: Math.floor(Math.random() * 10000), // ID simple y aleatorio
+            title: '¡Recordatorio!',
+            body: title,
+            schedule: { at: scheduleDate }
+            // Sin 'sound', para máxima compatibilidad
+          }]
+        });
+        console.log('Notificación programada exitosamente con payload de prueba.');
+        await this.showToast('Notificación programada.', 'success');
+      } catch (e) {
+        console.error('Falló la programación de la notificación post-modal.', e);
+        await this.showToast('La notificación no pudo ser programada.', 'danger');
+      }
     }
   }
 

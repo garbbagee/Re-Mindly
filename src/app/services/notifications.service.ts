@@ -64,10 +64,7 @@ export class NotificationsService {
           title,
           body,
           schedule: { at: scheduleAt },
-          channelId: 'reminders_channel',
           sound: 'default',
-          actionTypeId: 'TASK_ACTIONS',
-          extra: { taskId }
         }
       ]
     };
@@ -75,6 +72,7 @@ export class NotificationsService {
     if (Capacitor.isPluginAvailable('LocalNotifications')) {
       try {
         await LocalNotifications.schedule(options);
+        console.log('Notificación programada:', title, 'para:', scheduleAt);
       } catch (error) {
         console.error('Error scheduling notification with Capacitor', error);
       }
