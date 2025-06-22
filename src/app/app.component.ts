@@ -1,24 +1,25 @@
 import { Component } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
-import { NotificationsService } from './services/notifications.service';
 import { NotificationActionsService } from './services/notification-actions.service';
+import { NotificationsService } from './services/notifications.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
+  styleUrls: ['app.component.scss'],
+  standalone: true,
   imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent {
   constructor(
-    private notificationsService: NotificationsService,
-    private notificationActionsService: NotificationActionsService
+    private notificationActions: NotificationActionsService,
+    private notificationsService: NotificationsService
   ) {
     this.initializeApp();
   }
 
-  private async initializeApp() {
-    // Verificar permisos de notificación al iniciar la app
-    const notificationsEnabled = await this.notificationsService.areNotificationsEnabled();
-    console.log('Notificaciones habilitadas:', notificationsEnabled);
+  initializeApp() {
+    this.notificationsService.initialize();
+    this.notificationActions.initialize();
   }
 }

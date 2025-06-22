@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/login"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Crear Cuenta</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="register-container">
+    <h1>Re-Mindly</h1>
+    <p>Regístrate para empezar a organizar tus tareas</p>
+    <form [formGroup]="registerForm" (ngSubmit)="register()">
+      <ion-item>
+        <ion-label position="floating">Correo Electrónico</ion-label>
+        <ion-input type="email" formControlName="email" required></ion-input>
+      </ion-item>
+      <div *ngIf="registerForm.get('email')?.invalid && (registerForm.get('email')?.dirty || registerForm.get('email')?.touched)" class="error-message">
+        <small *ngIf="registerForm.get('email')?.errors?.['required']">El correo es requerido.</small>
+        <small *ngIf="registerForm.get('email')?.errors?.['email']">Correo inválido.</small>
+      </div>
+
+      <ion-item>
+        <ion-label position="floating">Contraseña</ion-label>
+        <ion-input type="password" formControlName="password" required></ion-input>
+      </ion-item>
+      <div *ngIf="registerForm.get('password')?.invalid && (registerForm.get('password')?.dirty || registerForm.get('password')?.touched)" class="error-message">
+         <small *ngIf="registerForm.get('password')?.errors?.['required']">La contraseña es requerida.</small>
+         <small *ngIf="registerForm.get('password')?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres.</small>
+      </div>
+
+      <ion-button expand="block" type="submit" [disabled]="registerForm.invalid" class="ion-margin-top">
+        Registrarse
+      </ion-button>
+    </form>
+  </div>
+</ion-content> 

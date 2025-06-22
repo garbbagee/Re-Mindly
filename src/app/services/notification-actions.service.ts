@@ -1,50 +1,75 @@
-import { Injectable } from '@angular/core';
-import { LocalNotifications } from '@capacitor/local-notifications';
-import { Platform } from '@ionic/angular';
+import { Injectable, NgZone } from '@angular/core';
+import { LocalNotifications, ActionPerformed } from '@capacitor/local-notifications';
+import { Router } from '@angular/router';
+import { TasksService } from './tasks.service';
+import { NotificationsService } from './notifications.service';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationActionsService {
 
-  private isWeb = false;
+  constructor(
+    private zone: NgZone,
+    private router: Router,
+    private tasksService: TasksService,
+    private notificationsService: NotificationsService
+  ) { }
 
-  constructor(private platform: Platform) {
-    this.isWeb = this.platform.is('desktop') || this.platform.is('mobileweb');
-    this.registerNotificationActions();
-  }
+  public initialize() {
+    LocalNotifications.registerActionTypes({
+      types: [
+        {
+          id: 'TASK_ACTIONS',
+          actions: [
+            { id: 'complete', title: 'Listo' },
+            { id: 'snooze', title: 'Pospone 1 Hora' },
+            { id: 'cancel', title: 'Cancelar Tarea' }
+          ]
+        }
+      ]
+    });
 
-  /**
-   * Registra las acciones de notificación disponibles
-   */
-  private async registerNotificationActions() {
-    // Solo registrar acciones en dispositivos móviles, no en web
-    if (this.isWeb) {
-      console.log('Acciones de notificación no disponibles en web');
-      return;
-    }
+    LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction: ActionPerformed) => {
+      this.zone.run(async () => {
+        const { actionId, notification } = notificationAction;
+        const taskId = notification.extra?.taskId;
 
-    try {
-      await LocalNotifications.registerActionTypes({
-        types: [
-          {
-            id: 'REMINDER_ACTIONS',
-            actions: [
-              {
-                id: 'COMPLETE',
-                title: 'Completado'
-              },
-              {
-                id: 'CANCEL',
-                title: 'Cancelar'
-              }
-            ]
+        if (!taskId) {
+          console.error("Notification action received without a taskId");
+          return;
+        }
+        
+        const task = await firstValueFrom(this.tasksService.getTask(taskId));
+        if (!task) {
+          console.error(`Task with id ${taskId} not found.`);
+          return;
+        }
+
+        if (actionId === 'tap') {
+          this.router.navigate(['/feed']);
+        } else if (actionId === 'complete') {
+          await this.tasksService.updateTask(taskId, { status: 'completed' });
+          console.log(`Task ${taskId} marked as complete.`);
+        } else if (actionId === 'snooze') {
+          const snoozeDate = new Date(Date.now() + 60 * 60 * 1000);
+          if(snoozeDate < task.dueDate.toDate()) {
+            await this.notificationsService.scheduleNotification(
+              '¡Tarea Pospuesta!',
+              `Recuerda: ${task.title}`,
+              snoozeDate,
+              taskId
+            );
+            console.log(`Task ${taskId} snoozed for 1 hour.`);
+          } else {
+             console.log(`Snooze canceled for task ${taskId}, due date is too soon.`);
           }
-        ]
+        } else if (actionId === 'cancel') {
+          await this.tasksService.updateTask(taskId, { status: 'cancelled' });
+          console.log(`Task ${taskId} was cancelled.`);
+        }
       });
-      console.log('Acciones de notificación registradas');
-    } catch (error) {
-      console.error('Error al registrar acciones de notificación:', error);
-    }
+    });
   }
 } 

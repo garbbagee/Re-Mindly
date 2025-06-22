@@ -1,0 +1,133 @@
+<ion-menu contentId="main-content">
+  <ion-header>
+    <ion-toolbar color="primary">
+      <ion-title>Menú</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <ion-list>
+      <ion-item button (click)="testNotification()">
+        <ion-icon name="notifications-outline" slot="start"></ion-icon>
+        <ion-label>Probar Notificación</ion-label>
+      </ion-item>
+      <ion-item button (click)="logout()">
+        <ion-icon name="log-out-outline" slot="start"></ion-icon>
+        <ion-label>Cerrar Sesión</ion-label>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<div class="ion-page" id="main-content">
+  <ion-header>
+    <ion-toolbar color="primary">
+      <ion-buttons slot="start">
+        <ion-menu-button></ion-menu-button>
+      </ion-buttons>
+      <ion-title>Mis Tareas</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content [fullscreen]="true">
+    <div *ngIf="!notificationPermissionGranted" class="notification-warning">
+      <ion-icon name="notifications-off-outline" color="danger"></ion-icon>
+      <span>Las notificaciones están desactivadas. Actívalas en los ajustes del sistema.</span>
+    </div>
+
+    <div *ngIf="taskGroups.length === 0" class="empty-state">
+      <ion-icon name="reorder-two-outline"></ion-icon>
+      <p>No tienes tareas pendientes. ¡Añade una nueva!</p>
+    </div>
+
+    <div *ngFor="let group of taskGroups">
+      <ion-list-header>{{ group }}</ion-list-header>
+      <ion-list>
+        <ion-item-sliding *ngFor="let task of groupedTasks[group]" [disabled]="task.status === 'cancelled'">
+          <ion-item [class.completed]="task.status === 'completed'" [class.cancelled]="task.status === 'cancelled'" detail="false">
+            <div class="priority-indicator" [style.background-color]="'var(--ion-color-' + priorityColorMap[task.priority] + ')'"></div>
+            <div class="item-content">
+              <div class="task-info" (click)="openEditTaskModal(task)">
+                <ion-label>
+                  <h2>{{ task.title }}</h2>
+                  <p class="description">{{ task.description }}</p>
+                  <p class="due-date">
+                    <ion-icon name="time-outline"></ion-icon>
+                    {{ task.dueDate.toDate() | date: 'medium' }}
+                  </p>
+                   <p *ngIf="task.status === 'cancelled'" class="cancelled-label">
+                    <ion-icon name="close-circle-outline"></ion-icon>
+                    Cancelada
+                  </p>
+                </ion-label>
+              </div>
+              <ion-button fill="clear" slot="end" (click)="toggleStatus(task); $event.stopPropagation();">
+                <ion-icon slot="icon-only" [name]="task.status === 'completed' ? 'checkmark-circle' : 'ellipse-outline'" [color]="task.status === 'completed' ? 'success' : 'medium'"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-item>
+
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="deleteTask(task.id!)">
+              <ion-icon slot="icon-only" name="trash"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </div>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button (click)="openNewTaskModal()">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+  </ion-content>
+</div>
+
+<!-- Task Modal -->
+<ion-modal #modal [isOpen]="isModalOpen" (didDismiss)="isModalOpen = false">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ isEditMode ? 'Editar Tarea' : 'Nueva Tarea' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cancelModal()">Cancelar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <form [formGroup]="taskForm" (ngSubmit)="confirmModal()">
+        <ion-item>
+          <ion-label position="floating">Título</ion-label>
+          <ion-input formControlName="title" required></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Descripción</ion-label>
+          <ion-textarea formControlName="description" [autoGrow]="true"></ion-textarea>
+        </ion-item>
+        <ion-item>
+          <ion-label>Prioridad</ion-label>
+          <ion-select formControlName="priority" interface="popover">
+            <ion-select-option value="low">Baja</ion-select-option>
+            <ion-select-option value="medium">Media</ion-select-option>
+            <ion-select-option value="high">Alta</ion-select-option>
+          </ion-select>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label>Fecha Límite</ion-label>
+          <ion-datetime-button datetime="datetime"></ion-datetime-button>
+        </ion-item>
+        
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime id="datetime" formControlName="dueDate" presentation="date-time"></ion-datetime>
+          </ng-template>
+        </ion-modal>
+
+        <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="taskForm.invalid">
+          {{ isEditMode ? 'Guardar Cambios' : 'Crear Tarea' }}
+        </ion-button>
+      </form>
+    </ion-content>
+  </ng-template>
+</ion-modal> 

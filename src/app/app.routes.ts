@@ -1,25 +1,28 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
-    path: 'home',
-    loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
-  },
-  {
-    path: '',
-    redirectTo: 'home',
-    pathMatch: 'full',
-  },
-  {
     path: 'login',
-    loadComponent: () => import('./pages/login/login.page').then( m => m.LoginPage)
+    loadComponent: () => import('./login/login.page').then((m) => m.LoginPage),
   },
   {
     path: 'register',
-    loadComponent: () => import('./pages/register/register.page').then( m => m.RegisterPage)
+    loadComponent: () => import('./register/register.page').then((m) => m.RegisterPage),
   },
   {
     path: 'feed',
-    loadComponent: () => import('./pages/feed/feed.page').then( m => m.FeedPage)
+    loadComponent: () => import('./feed/feed.page').then((m) => m.FeedPage),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'home',
+    redirectTo: 'feed',
+    pathMatch: 'full',
+  },
+  {
+    path: '',
+    redirectTo: 'feed',
+    pathMatch: 'full',
   },
 ];

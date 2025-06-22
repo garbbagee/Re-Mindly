@@ -1,24 +1,11 @@
-// Archivo de ejemplo para configuraciones de entorno
-// Copia este archivo como environment.ts y agrega tus valores reales
-
 export const environment = {
   production: false,
-  
-  // Firebase Configuration
-  firebase: {
-    apiKey: 'TU_API_KEY_AQUI',
-    authDomain: 'tu-proyecto.firebaseapp.com',
-    projectId: 'tu-proyecto-id',
-    storageBucket: 'tu-proyecto.appspot.com',
-    messagingSenderId: '123456789',
-    appId: '1:123456789:web:abcdef123456'
-  },
-  
-  // Otras APIs
-  apiUrl: 'https://tu-api.com',
-  apiKey: 'TU_API_KEY_AQUI',
-  
-  // Configuraciones de la app
-  appName: 'Re-Mindly',
-  version: '1.0.0'
+  firebaseConfig: {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  }
 }; 

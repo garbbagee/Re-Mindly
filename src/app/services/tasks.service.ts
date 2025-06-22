@@ -1,115 +1,82 @@
 import { Injectable } from '@angular/core';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { environment } from 'src/environments/environment';
-import { Observable } from 'rxjs';
+import { Firestore, collection, addDoc, collectionData, query, where, doc, updateDoc, deleteDoc, Timestamp, DocumentReference, docData } from '@angular/fire/firestore';
+import { Observable, firstValueFrom } from 'rxjs';
+import { AuthService } from './auth.service';
+import { switchMap } from 'rxjs/operators';
+import { User } from '@angular/fire/auth';
 
 export interface Task {
-  id: string;
+  id?: string;
   title: string;
   description: string;
-  completed: boolean;
-  createdAt: Date;
-  dueDate?: Date;
-  priority: 'low' | 'medium' | 'high';
+  dueDate: Timestamp;
+  priority: 'high' | 'medium' | 'low';
+  status: 'pending' | 'completed' | 'cancelled';
   userId: string;
+  createdAt: Timestamp;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class TasksService {
-  private app = initializeApp(environment.firebaseConfig);
-  private firestore = getFirestore(this.app);
-  private auth = getAuth(this.app);
 
-  getTasks(): Observable<Task[]> {
-    const userId = this.auth.currentUser?.uid;
-    if (!userId) {
-      return new Observable(subscriber => subscriber.next([]));
+  constructor(private firestore: Firestore, private authService: AuthService) { }
+
+  private async getCurrentUser(): Promise<User> {
+    const user = await firstValueFrom(this.authService.getAuthState());
+    if (!user) {
+      throw new Error('User not authenticated');
     }
-    
-    const tasksRef = collection(this.firestore, 'tasks');
-    
-    // Consulta temporal sin orderBy para evitar el error de índice
-    // Una vez que se cree el índice, puedes volver a usar orderBy
-    const q = query(
-      tasksRef, 
-      where('userId', '==', userId)
-      // orderBy('createdAt', 'desc') // Comentado temporalmente
-    );
-    
-    return new Observable(subscriber => {
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const tasks = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data['title'],
-            description: data['description'],
-            completed: data['completed'],
-            createdAt: data['createdAt']?.toDate() || new Date(),
-            dueDate: data['dueDate']?.toDate() || undefined,
-            priority: data['priority'],
-            userId: data['userId']
-          } as Task;
-        });
-        
-        // Ordenar en el cliente temporalmente
-        tasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        
-        subscriber.next(tasks);
-      }, (error) => {
-        console.error('Error getting tasks:', error);
-        subscriber.error(error);
-      });
+    return user;
+  }
 
-      return unsubscribe;
+  async addTask(taskData: { title: string; description: string; dueDate: Date; priority: 'high' | 'medium' | 'low'; }): Promise<DocumentReference> {
+    const user = await this.getCurrentUser();
+    const tasksCollection = collection(this.firestore, 'tasks');
+    return addDoc(tasksCollection, {
+      ...taskData,
+      dueDate: Timestamp.fromDate(taskData.dueDate),
+      userId: user.uid,
+      createdAt: Timestamp.now(),
+      status: 'pending'
     });
   }
 
-  addTask(task: Omit<Task, 'id' | 'userId'>): Promise<string> {
-    const userId = this.auth.currentUser?.uid;
-    if (!userId) {
-      return Promise.reject('Usuario no autenticado');
-    }
-    
-    const taskData = {
-      ...task,
-      userId,
-      createdAt: Timestamp.fromDate(task.createdAt),
-      dueDate: task.dueDate ? Timestamp.fromDate(task.dueDate) : null
-    };
-    
-    const tasksRef = collection(this.firestore, 'tasks');
-    return addDoc(tasksRef, taskData).then(docRef => docRef.id);
+  getTasks(): Observable<Task[]> {
+    return this.authService.getAuthState().pipe(
+      switchMap(user => {
+        if (user) {
+          const tasksCollection = collection(this.firestore, 'tasks');
+          const q = query(tasksCollection, where('userId', '==', user.uid));
+          return collectionData(q, { idField: 'id' }) as Observable<Task[]>;
+        } else {
+          return new Observable<Task[]>(subscriber => subscriber.next([]));
+        }
+      })
+    );
   }
 
-  updateTask(taskId: string, updates: Partial<Task>): Promise<void> {
-    const taskRef = doc(this.firestore, 'tasks', taskId);
-    
-    const updateData: any = { ...updates };
-    if (updates.dueDate) {
-      updateData.dueDate = Timestamp.fromDate(updates.dueDate);
+  getTask(taskId: string): Observable<Task | null> {
+    const taskDocRef = doc(this.firestore, `tasks/${taskId}`);
+    return docData(taskDocRef, { idField: 'id' }) as Observable<Task | null>;
+  }
+
+  updateTask(taskId: string, taskData: Partial<Task>): Promise<void> {
+    const taskDocRef = doc(this.firestore, `tasks/${taskId}`);
+    const dataToUpdate = { ...taskData };
+    if (dataToUpdate.dueDate && !(dataToUpdate.dueDate instanceof Timestamp)) {
+        dataToUpdate.dueDate = Timestamp.fromDate(dataToUpdate.dueDate as any);
     }
-    if (updates.createdAt) {
-      updateData.createdAt = Timestamp.fromDate(updates.createdAt);
+    if ('completed' in dataToUpdate) {
+      delete (dataToUpdate as any).completed;
     }
-    
-    // Remover campos que no deben actualizarse
-    delete updateData.id;
-    delete updateData.userId;
-    
-    return updateDoc(taskRef, updateData);
+    delete dataToUpdate.id;
+    return updateDoc(taskDocRef, dataToUpdate as any);
   }
 
   deleteTask(taskId: string): Promise<void> {
-    const taskRef = doc(this.firestore, 'tasks', taskId);
-    return deleteDoc(taskRef);
-  }
-
-  toggleTaskComplete(taskId: string, completed: boolean): Promise<void> {
-    return this.updateTask(taskId, { completed });
+    const taskDocRef = doc(this.firestore, `tasks/${taskId}`);
+    return deleteDoc(taskDocRef);
   }
 } 
