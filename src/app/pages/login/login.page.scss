@@ -13,8 +13,8 @@ ion-content {
 .welcome-container {
   max-width: 480px;
   width: 100%;
-  height: calc(100vh - 48px); /* Alto pantalla menos márgenes */
-  padding: 40px 30px;
+  min-height: calc(100vh - 48px); /* Usar min-height para flexibilidad */
+  padding: 20px; /* Padding más adaptable */
   border-radius: 16px;
 
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
@@ -31,7 +31,11 @@ ion-content {
   text-align: center;
 }
 
-h1, p, form, ion-button {
+h1 {
+  font-size: 1.8rem; /* Ajustar tamaño para pantallas pequeñas */
+}
+
+h1, p, ion-button {
   opacity: 0;
   transform: translateY(20px);
   animation-fill-mode: forwards;
