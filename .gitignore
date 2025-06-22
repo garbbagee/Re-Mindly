@@ -12,29 +12,117 @@ $RECYCLE.BIN/
 *.log
 log.txt
 
+# ===== CONFIGURACIONES SENSIBLES Y CLAVES =====
+# Archivos de configuración con claves
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
 
+# Archivos de configuración de Firebase
+google-services.json
+GoogleService-Info.plist
+firebase-debug.log
+firebase-debug.*.log
+
+# Archivos de configuración de servicios
+config.json
+secrets.json
+credentials.json
+service-account.json
+*.pem
+*.key
+*.p12
+*.keystore
+
+# Archivos de configuración de APIs
+api-keys.json
+api-config.json
+secrets.ts
+config.ts
+
+# Archivos de environment con claves reales (NO subir a Git)
+src/environments/environment.ts
+src/environments/environment.prod.ts
+src/environments/environment.local.ts
+
+# ===== ANDROID =====
+# Archivos de firma y keystore
+android/app/debug.keystore
+android/app/release.keystore
+android/app/*.jks
+android/app/*.keystore
+android/key.properties
+android/app/google-services.json
+
+# Archivos de build de Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/settings.gradle
+android/build.gradle
+android/app/build.gradle
+
+# ===== iOS =====
+# Archivos de configuración de iOS
+ios/App/App/GoogleService-Info.plist
+ios/App/App/App.entitlements
+ios/App/App/Info.plist
+ios/App/App/AppDelegate.swift
+ios/App/App/AppDelegate.m
+ios/App/App/ViewController.swift
+ios/App/App/ViewController.m
+ios/App/App/Main.storyboard
+ios/App/App/Base.lproj/
+ios/App/App/Assets.xcassets/
+ios/App/App/LaunchScreen.storyboard
+ios/App/App/App.xcworkspace/
+ios/App/App.xcodeproj/
+ios/App/Pods/
+ios/App/Podfile.lock
+
+# ===== CAPACITOR =====
+# Archivos de configuración de Capacitor
+capacitor.config.ts
+capacitor.config.json
+
+# ===== ANGULAR/IONIC =====
 /.sourcemaps
 /.versions
 /coverage
-
-# Ionic
 /.ionic
 /www
 /platforms
 /plugins
-
-# Compiled output
 /dist
 /tmp
 /out-tsc
 /bazel-out
+/.angular
+/.angular/cache
+.sass-cache/
+/.nx
+/.nx/cache
+/connect.lock
+/libpeerconnection.log
+testem.log
+/typings
 
-# Node
+# ===== NODE =====
 /node_modules
 npm-debug.log
 yarn-error.log
+yarn.lock
+package-lock.json
 
-# IDEs and editors
+# ===== IDEs y EDITORES =====
 .idea/
 .project
 .classpath
@@ -52,19 +140,44 @@ yarn-error.log
 !.vscode/extensions.json
 .history/*
 
-
-# Miscellaneous
-/.angular
-/.angular/cache
-.sass-cache/
-/.nx
-/.nx/cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-
-# System files
+# ===== ARCHIVOS DEL SISTEMA =====
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ===== ARCHIVOS TEMPORALES =====
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+
+# ===== LOGS =====
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ===== CACHE =====
+.cache/
+.parcel-cache/
+.npm
+.eslintcache
+
+# ===== TESTING =====
+/coverage
+/.nyc_output
+/cypress/videos/
+/cypress/screenshots/
+
+# ===== ARCHIVOS ESPECÍFICOS DEL PROYECTO =====
+# Si tienes archivos específicos que contengan claves
+firebase-config.js
+firebase-config.ts
+api-keys.js
+api-keys.ts
+secrets.js
+secrets.ts

@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from 'src/app/services/auth.service';
 import { TasksService, Task } from 'src/app/services/tasks.service';
+import { NotificationsService } from 'src/app/services/notifications.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -47,6 +48,7 @@ export class FeedPage implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     private tasksService: TasksService,
+    private notificationsService: NotificationsService,
     private menuCtrl: MenuController,
     private alertController: AlertController,
     private toastController: ToastController
@@ -102,13 +104,62 @@ export class FeedPage implements OnInit, OnDestroy {
       priority: this.newTaskPriority
     };
 
-    this.tasksService.addTask(newTask).then(() => {
+    this.tasksService.addTask(newTask).then((taskId) => {
+      // Programar notificación si la tarea tiene fecha de vencimiento
+      if (newTask.dueDate) {
+        this.scheduleTaskNotification(taskId, newTask);
+      }
+      
       this.closeAddTaskModal();
       this.showToast('Tarea agregada exitosamente');
     }).catch(error => {
       console.error('Error adding task:', error);
       this.showToast('Error al agregar la tarea');
     });
+  }
+
+  /**
+   * Programa una notificación para una tarea
+   */
+  private async scheduleTaskNotification(taskId: string, task: any) {
+    try {
+      const scheduledTime = new Date(task.dueDate);
+      
+      // Programar notificación 1 hora antes del vencimiento
+      const notificationTime = new Date(scheduledTime.getTime() - (60 * 60 * 1000));
+      
+      // Solo programar si la hora de notificación es en el futuro
+      if (notificationTime > new Date()) {
+        const success = await this.notificationsService.scheduleReminder({
+          id: parseInt(taskId),
+          title: `Recordatorio: ${task.title}`,
+          description: `Tu tarea "${task.title}" vence en 1 hora`,
+          scheduledTime: notificationTime
+        });
+
+        if (success) {
+          console.log(`Notificación programada para tarea ${taskId}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error al programar notificación:', error);
+    }
+  }
+
+  /**
+   * Prueba de notificación inmediata
+   */
+  async testNotification() {
+    const success = await this.notificationsService.showImmediateNotification(
+      'Prueba de Notificación',
+      'Esta es una notificación de prueba para verificar que el sistema funciona correctamente.'
+    );
+
+    if (success) {
+      this.showToast('Notificación de prueba enviada');
+    } else {
+      this.showToast('Error al enviar notificación de prueba');
+    }
   }
 
   toggleTask(task: Task) {
