@@ -237,7 +237,14 @@ export class FeedPage implements OnInit, OnDestroy {
         const taskDataToUpdate: Partial<Task> = { ...formValue, dueDate: Timestamp.fromDate(dueDate) };
         await this.tasksService.updateTask(this.currentTaskId, taskDataToUpdate);
         await this.showToast('Tarea actualizada con éxito');
-        this.modal.dismiss(null, 'confirm');
+        
+        const timeDiff = dueDate.getTime() - Date.now();
+        this.modal.dismiss({ 
+          taskId: this.currentTaskId, 
+          timeDiff: timeDiff > 0 ? timeDiff : 0,
+          title: formValue.title,
+          priority: formValue.priority
+        }, 'confirm');
       } else {
         const taskDataToAdd = { ...formValue, status: 'pending', dueDate: dueDate };
         const docRef = await this.tasksService.addTask(taskDataToAdd);
@@ -248,7 +255,8 @@ export class FeedPage implements OnInit, OnDestroy {
         this.modal.dismiss({ 
           taskId: docRef.id, 
           timeDiff: timeDiff > 0 ? timeDiff : 0,
-          title: formValue.title 
+          title: formValue.title,
+          priority: formValue.priority
         }, 'confirm');
       }
     } catch (error) {
@@ -261,29 +269,46 @@ export class FeedPage implements OnInit, OnDestroy {
   }
 
   async handleModalDismiss(event: Event) {
-    const ev = event as CustomEvent<OverlayEventDetail<{ taskId: string; timeDiff: number; title: string }>>;
+    const ev = event as CustomEvent<OverlayEventDetail<{ taskId: string; timeDiff: number; title: string; priority: string }>>;
     this.isModalOpen = false; // Close the modal in the UI
 
     if (ev.detail.role === 'confirm' && ev.detail.data) {
-      const { timeDiff, title } = ev.detail.data;
-      const scheduleDate = new Date(Date.now() + timeDiff);
+      const { timeDiff, title, priority } = ev.detail.data;
       
-      console.log('--- Modal Cerrado. Intentando programar con payload idéntico al de la prueba. ---');
+      // Calcular horas antes según prioridad
+      let hoursBefore = 1;
+      switch (priority) {
+        case 'high': hoursBefore = 2; break;
+        case 'medium': hoursBefore = 3; break;
+        case 'low': hoursBefore = 4; break;
+      }
+      
+      const scheduleDateBefore = new Date(Date.now() + timeDiff - (hoursBefore * 60 * 60 * 1000));
+      const scheduleDateExact = new Date(Date.now() + timeDiff);
+      
+      console.log('--- Modal Cerrado. Programando 2 notificaciones. ---');
       try {
         await LocalNotifications.schedule({
-          notifications: [{
-            id: Math.floor(Math.random() * 10000), // ID simple y aleatorio
-            title: '¡Recordatorio!',
-            body: title,
-            schedule: { at: scheduleDate }
-            // Sin 'sound', para máxima compatibilidad
-          }]
+          notifications: [
+            {
+              id: Math.floor(Math.random() * 10000), // Notificación ANTES
+              title: '¡Recordatorio!',
+              body: title,
+              schedule: { at: scheduleDateBefore }
+            },
+            {
+              id: Math.floor(Math.random() * 10000) + 1, // Notificación EXACTA
+              title: '¡Recordatorio!',
+              body: title,
+              schedule: { at: scheduleDateExact }
+            }
+          ]
         });
-        console.log('Notificación programada exitosamente con payload de prueba.');
-        await this.showToast('Notificación programada.', 'success');
+        console.log('2 notificaciones programadas exitosamente.');
+        await this.showToast('Notificaciones programadas.', 'success');
       } catch (e) {
-        console.error('Falló la programación de la notificación post-modal.', e);
-        await this.showToast('La notificación no pudo ser programada.', 'danger');
+        console.error('Falló la programación de las notificaciones post-modal.', e);
+        await this.showToast('Las notificaciones no pudieron ser programadas.', 'danger');
       }
     }
   }
