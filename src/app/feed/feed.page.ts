@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -20,17 +20,29 @@ import { OverlayEventDetail } from '@ionic/core/components';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonList, IonItemSliding, IonItem, IonLabel, IonItemOptions, IonItemOption, IonIcon, IonFab, IonFabButton, IonModal, IonButton, IonInput, IonTextarea, IonSelect, IonSelectOption, IonDatetime, IonDatetimeButton, IonMenu, IonListHeader, DatePipe ],
 })
-export class FeedPage implements OnInit, OnDestroy {
+export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild(IonModal) modal!: IonModal;
+  @ViewChild('progressCircle') progressCircle!: ElementRef<HTMLElement>;
   
   groupedTasks: { [key: string]: Task[] } = {};
   taskGroups: string[] = [];
+
+  // Filtro de tareas: 'all', 'completed', 'pending', 'overdue'
+  taskFilter: 'all' | 'completed' | 'pending' | 'overdue' = 'all';
 
   taskForm: FormGroup;
   isEditMode = false;
   isModalOpen = false;
   currentTaskId: string | null = null;
-  private tasksSubscription!: Subscription;
+  public tasksSubscription!: Subscription;
+
+  // Propiedades para el progreso diario
+  dailyProgress = {
+    completed: 0,
+    pending: 0,
+    overdue: 0,
+    total: 0
+  };
 
   priorityColorMap: { [key in 'high' | 'medium' | 'low']: string } = {
     high: 'danger',
@@ -39,6 +51,8 @@ export class FeedPage implements OnInit, OnDestroy {
   };
 
   notificationPermissionGranted = true;
+
+  private lastFilter: 'completed' | 'pending' | 'overdue' = 'pending';
 
   constructor(
     private authService: AuthService,
@@ -49,7 +63,8 @@ export class FeedPage implements OnInit, OnDestroy {
     private toastController: ToastController,
     private loadingController: LoadingController,
     private alertController: AlertController,
-    private menuCtrl: MenuController
+    private menuCtrl: MenuController,
+    private cdr: ChangeDetectorRef
   ) {
     addIcons({ trash, checkmarkCircle, add, logOutOutline, reorderTwoOutline, optionsOutline, timeOutline, notificationsOutline, ellipseOutline, closeCircleOutline });
     this.taskForm = this.fb.group({
@@ -68,40 +83,111 @@ export class FeedPage implements OnInit, OnDestroy {
     }
     this.tasksSubscription = this.tasksService.getTasks().subscribe(tasks => {
       this.groupTasks(tasks.sort((a, b) => a.dueDate.toMillis() - b.dueDate.toMillis()));
+      this.cdr.detectChanges();
+      this.updateProgressCircle();
     });
   }
 
+  ngAfterViewInit() {
+    this.updateProgressCircle();
+  }
+
+  // Función auxiliar para comparar solo año, mes y día
+  private isSameDay(date1: Date, date2: Date): boolean {
+    return date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate();
+  }
+
+  private calculateDailyProgress(tasks: Task[], today: Date) {
+    const now = new Date();
+    // Completadas: todas con status completed y fecha <= ahora
+    const completed = tasks.filter(task => {
+      const dueDate = task.dueDate.toDate();
+      return dueDate <= now && task.status === 'completed';
+    }).length;
+    // Pendientes: todas con status pending y fecha > ahora
+    const pending = tasks.filter(task => {
+      const dueDate = task.dueDate.toDate();
+      return dueDate > now && task.status === 'pending';
+    }).length;
+    // Atrasadas: todas con status pending y fecha <= ahora
+    const overdue = tasks.filter(task => {
+      const dueDate = task.dueDate.toDate();
+      return dueDate <= now && task.status === 'pending';
+    }).length;
+    this.dailyProgress = {
+      completed,
+      pending,
+      overdue,
+      total: completed + pending + overdue
+    };
+  }
+
   private groupTasks(tasks: Task[]) {
-    this.groupedTasks = {}; // Reset
+    this.groupedTasks = { 'Atrasadas': [], 'Hoy': [], 'Mañana': [], 'Próximamente': [] };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
+    const now = new Date();
+
+    // Calcular progreso diario
+    this.calculateDailyProgress(tasks, today);
 
     for (const task of tasks) {
-      if (task.status === 'completed') continue; // Opcional: no mostrar completadas en grupos
-      
       const dueDate = task.dueDate.toDate();
-      dueDate.setHours(0, 0, 0, 0);
+      const isOverdue = dueDate <= now && task.status === 'pending';
+      (task as any)._isOverdue = isOverdue;
 
-      let groupKey: string;
-
-      if (dueDate.getTime() < today.getTime()) {
-        groupKey = 'Atrasadas';
-      } else if (dueDate.getTime() === today.getTime()) {
-        groupKey = 'Hoy';
-      } else if (dueDate.getTime() === tomorrow.getTime()) {
-        groupKey = 'Mañana';
-      } else {
-        groupKey = 'Próximamente';
+      if (isOverdue) {
+        this.groupedTasks['Atrasadas'].push(task);
+      } else if (this.isSameDay(dueDate, today)) {
+        this.groupedTasks['Hoy'].push(task);
+      } else if (this.isSameDay(dueDate, tomorrow)) {
+        this.groupedTasks['Mañana'].push(task);
+      } else if (dueDate > tomorrow) {
+        this.groupedTasks['Próximamente'].push(task);
       }
-      
-      if (!this.groupedTasks[groupKey]) {
-        this.groupedTasks[groupKey] = [];
-      }
-      this.groupedTasks[groupKey].push(task);
     }
     this.taskGroups = ['Atrasadas', 'Hoy', 'Mañana', 'Próximamente'].filter(g => this.groupedTasks[g]?.length > 0);
+  }
+
+  private updateProgressCircle() {
+    setTimeout(() => {
+      const circle = this.progressCircle?.nativeElement;
+      if (!circle) return;
+      if (this.dailyProgress.total === 0) {
+        circle.style.setProperty('--completed-deg', '0');
+        circle.style.setProperty('--pending-deg', '0');
+        circle.style.setProperty('--overdue-deg', '0');
+        return;
+      }
+      const total = this.dailyProgress.total;
+      let completedDeg = Math.round((this.dailyProgress.completed / total) * 360);
+      let pendingDeg = Math.round((this.dailyProgress.pending / total) * 360);
+      let overdueDeg = Math.round((this.dailyProgress.overdue / total) * 360);
+      if (this.dailyProgress.completed === total) {
+        completedDeg = 360; pendingDeg = 0; overdueDeg = 0;
+      }
+      if (this.dailyProgress.pending === total) {
+        completedDeg = 0; pendingDeg = 360; overdueDeg = 0;
+      }
+      if (this.dailyProgress.overdue === total) {
+        completedDeg = 0; pendingDeg = 0; overdueDeg = 360;
+      }
+      const sum = completedDeg + pendingDeg + overdueDeg;
+      if (sum !== 360) {
+        const diff = 360 - sum;
+        const max = Math.max(completedDeg, pendingDeg, overdueDeg);
+        if (completedDeg === max) completedDeg += diff;
+        else if (pendingDeg === max) pendingDeg += diff;
+        else overdueDeg += diff;
+      }
+      circle.style.setProperty('--completed-deg', completedDeg.toString());
+      circle.style.setProperty('--pending-deg', pendingDeg.toString());
+      circle.style.setProperty('--overdue-deg', overdueDeg.toString());
+    }, 0);
   }
 
   ngOnDestroy() {
@@ -320,5 +406,65 @@ export class FeedPage implements OnInit, OnDestroy {
       color
     });
     toast.present();
+  }
+
+  setTaskFilter(filter: 'all' | 'completed' | 'pending' | 'overdue') {
+    if (filter !== 'all') {
+      this.lastFilter = filter as any;
+    }
+    this.taskFilter = filter;
+  }
+
+  toggleFiltro() {
+    if (this.taskFilter === 'all') {
+      this.taskFilter = this.lastFilter;
+    } else {
+      this.taskFilter = 'all';
+    }
+  }
+
+  shouldShowGroup(group: string): boolean {
+    if (this.taskFilter === 'all') return true;
+    if (this.taskFilter === 'completed') return group === 'Hoy' || group === 'Atrasadas' || group === 'Mañana' || group === 'Próximamente';
+    if (this.taskFilter === 'pending') return group === 'Hoy' || group === 'Mañana' || group === 'Próximamente';
+    if (this.taskFilter === 'overdue') return group === 'Atrasadas';
+    return true;
+  }
+
+  isTaskVisible(task: Task): boolean {
+    if (this.taskFilter === 'all') return true;
+    if (this.taskFilter === 'completed') return task.status === 'completed';
+    if (this.taskFilter === 'pending') return task.status === 'pending' && !(task as any)._isOverdue;
+    if (this.taskFilter === 'overdue') return (task as any)._isOverdue;
+    return true;
+  }
+
+  public cancelTask(taskId: string) {
+    // ... (lógica existente)
+  }
+
+  public isOverdue(task: Task): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = task.dueDate.toDate();
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < today && task.status === 'pending';
+  }
+
+  get completedPercent() {
+    if (this.dailyProgress.total === 0) return 0;
+    const percent = (this.dailyProgress.completed / this.dailyProgress.total) * 100;
+    return this.dailyProgress.completed > 0 && percent < 4 ? 4 : percent;
+  }
+  get pendingPercent() {
+    if (this.dailyProgress.total === 0) return 0;
+    const percent = (this.dailyProgress.pending / this.dailyProgress.total) * 100;
+    return this.dailyProgress.pending > 0 && percent < 4 ? 4 : percent;
+  }
+  get overduePercent() {
+    if (this.dailyProgress.total === 0) return 0;
+    // El resto para que sumen 100
+    const percent = 100 - this.completedPercent - this.pendingPercent;
+    return percent < 0 ? 0 : percent;
   }
 }

@@ -34,52 +34,122 @@
       <span>Las notificaciones están desactivadas. Actívalas en los ajustes del sistema.</span>
     </div>
 
+    <!-- Barra de Progreso Segmentada Multicolor -->
+    <div class="progress-bar-section" *ngIf="tasksSubscription && dailyProgress.total > 0">
+      <h2 class="progress-title">Progreso de Hoy</h2>
+      <div class="progress-bar">
+        <div class="bar-segment completed" [ngStyle]="{ width: completedPercent + '%' }"></div>
+        <div class="bar-segment pending" [ngStyle]="{ width: pendingPercent + '%' }"></div>
+        <div class="bar-segment overdue" [ngStyle]="{ width: overduePercent + '%' }"></div>
+      </div>
+      <!-- Indicadores de colores como tabs de navegación -->
+      <div class="progress-bar-labels legend-tabs">
+        <span class="completed-label legend-item" [class.active]="taskFilter === 'completed'" (click)="setTaskFilter('completed')">{{ dailyProgress.completed }} Completadas</span>
+        <span class="pending-label legend-item" [class.active]="taskFilter === 'pending'" (click)="setTaskFilter('pending')">{{ dailyProgress.pending }} Pendientes</span>
+        <span class="overdue-label legend-item" [class.active]="taskFilter === 'overdue'" (click)="setTaskFilter('overdue')">{{ dailyProgress.overdue }} Atrasadas</span>
+      </div>
+    </div>
+
     <div *ngIf="taskGroups.length === 0" class="empty-state">
       <ion-icon name="reorder-two-outline"></ion-icon>
       <p>No tienes tareas pendientes. ¡Añade una nueva!</p>
     </div>
 
-    <div *ngFor="let group of taskGroups">
-      <ion-list-header>{{ group }}</ion-list-header>
+    <!-- Lista filtrada plana -->
+    <ng-container *ngIf="taskFilter !== 'all'">
       <ion-list>
-        <ion-item-sliding *ngFor="let task of groupedTasks[group]" [disabled]="task.status === 'cancelled'">
-          <ion-item [class.completed]="task.status === 'completed'" [class.cancelled]="task.status === 'cancelled'" detail="false">
-            <div class="priority-indicator" [style.background-color]="'var(--ion-color-' + priorityColorMap[task.priority] + ')'"></div>
-            <div class="item-content">
-              <div class="task-info" (click)="openEditTaskModal(task)">
-                <ion-label>
-                  <h2>{{ task.title }}</h2>
-                  <p class="description">{{ task.description }}</p>
-                  <p class="due-date">
-                    <ion-icon name="time-outline"></ion-icon>
-                    {{ task.dueDate.toDate() | date: 'medium' }}
-                  </p>
-                   <p *ngIf="task.status === 'cancelled'" class="cancelled-label">
-                    <ion-icon name="close-circle-outline"></ion-icon>
-                    Cancelada
-                  </p>
-                </ion-label>
-              </div>
-              <ion-button fill="clear" slot="end" (click)="toggleStatus(task); $event.stopPropagation();">
-                <ion-icon slot="icon-only" [name]="task.status === 'completed' ? 'checkmark-circle' : 'ellipse-outline'" [color]="task.status === 'completed' ? 'success' : 'medium'"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-item>
-
-          <ion-item-options side="end">
-            <ion-item-option color="danger" (click)="deleteTask(task.id!)">
-              <ion-icon slot="icon-only" name="trash"></ion-icon>
-            </ion-item-option>
-          </ion-item-options>
-        </ion-item-sliding>
+        <ng-container *ngFor="let group of taskGroups">
+          <ng-container *ngFor="let task of groupedTasks[group]">
+            <ion-item-sliding [disabled]="task.status === 'cancelled'" *ngIf="isTaskVisible(task)">
+              <ion-item [class.completed]="task.status === 'completed'" [class.cancelled]="task.status === 'cancelled'" [class.overdue]="isOverdue(task)" detail="false">
+                <div class="item-content">
+                  <div class="task-info" (click)="openEditTaskModal(task)">
+                    <ion-label>
+                      <h2>{{ task.title }}</h2>
+                      <p class="description">{{ task.description }}</p>
+                      <p class="due-date">
+                        <ion-icon name="time-outline"></ion-icon>
+                        {{ task.dueDate.toDate() | date: 'medium' }}
+                      </p>
+                      <p *ngIf="task.status === 'cancelled'" class="cancelled-label">
+                        <ion-icon name="close-circle-outline"></ion-icon>
+                        Cancelada
+                      </p>
+                    </ion-label>
+                  </div>
+                  <ion-button fill="clear" slot="end" (click)="toggleStatus(task); $event.stopPropagation();">
+                    <ion-icon slot="icon-only" [name]="task.status === 'completed' ? 'checkmark-circle' : 'ellipse-outline'" [color]="task.status === 'completed' ? 'success' : 'medium'"></ion-icon>
+                  </ion-button>
+                </div>
+              </ion-item>
+              <ion-item-options side="end">
+                <ion-item-option color="warning" (click)="cancelTask(task.id!)">
+                  <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
+                </ion-item-option>
+                <ion-item-option color="danger" (click)="deleteTask(task.id!)">
+                  <ion-icon slot="icon-only" name="trash"></ion-icon>
+                </ion-item-option>
+              </ion-item-options>
+            </ion-item-sliding>
+          </ng-container>
+        </ng-container>
       </ion-list>
-    </div>
+    </ng-container>
+
+    <!-- Vista agrupada por secciones -->
+    <ng-container *ngIf="taskFilter === 'all'">
+      <div *ngFor="let group of taskGroups">
+        <ion-list-header *ngIf="shouldShowGroup(group)">{{ group }}</ion-list-header>
+        <ion-list *ngIf="shouldShowGroup(group)">
+          <ng-container *ngFor="let task of groupedTasks[group]">
+            <ion-item-sliding [disabled]="task.status === 'cancelled'" *ngIf="isTaskVisible(task)">
+              <ion-item [class.completed]="task.status === 'completed'" [class.cancelled]="task.status === 'cancelled'" [class.overdue]="isOverdue(task)" detail="false">
+                <div class="item-content">
+                  <div class="task-info" (click)="openEditTaskModal(task)">
+                    <ion-label>
+                      <h2>{{ task.title }}</h2>
+                      <p class="description">{{ task.description }}</p>
+                      <p class="due-date">
+                        <ion-icon name="time-outline"></ion-icon>
+                        {{ task.dueDate.toDate() | date: 'medium' }}
+                      </p>
+                      <p *ngIf="task.status === 'cancelled'" class="cancelled-label">
+                        <ion-icon name="close-circle-outline"></ion-icon>
+                        Cancelada
+                      </p>
+                    </ion-label>
+                  </div>
+                  <ion-button fill="clear" slot="end" (click)="toggleStatus(task); $event.stopPropagation();">
+                    <ion-icon slot="icon-only" [name]="task.status === 'completed' ? 'checkmark-circle' : 'ellipse-outline'" [color]="task.status === 'completed' ? 'success' : 'medium'"></ion-icon>
+                  </ion-button>
+                </div>
+              </ion-item>
+              <ion-item-options side="end">
+                <ion-item-option color="warning" (click)="cancelTask(task.id!)">
+                  <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
+                </ion-item-option>
+                <ion-item-option color="danger" (click)="deleteTask(task.id!)">
+                  <ion-icon slot="icon-only" name="trash"></ion-icon>
+                </ion-item-option>
+              </ion-item-options>
+            </ion-item-sliding>
+          </ng-container>
+        </ion-list>
+      </div>
+    </ng-container>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button (click)="openNewTaskModal()">
         <ion-icon name="add"></ion-icon>
       </ion-fab-button>
     </ion-fab>
+
+    <!-- Botón flotante para alternar filtro/todas -->
+    <div class="toggle-filter-fab">
+      <ion-button expand="block" shape="round" color="primary" (click)="toggleFiltro()">
+        {{ taskFilter === 'all' ? 'Filtrar nuevamente' : 'Mostrar todas las tareas' }}
+      </ion-button>
+    </div>
   </ion-content>
 </div>
 
