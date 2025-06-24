@@ -201,6 +201,14 @@
           </ng-template>
         </ion-modal>
         
+        <ion-item *ngIf="showNotificationTypeSelect">
+          <ion-label>Notificación</ion-label>
+          <ion-select formControlName="notificationType" interface="popover">
+            <ion-select-option value="repeat-today">Repetir hoy</ion-select-option>
+            <ion-select-option value="repeat-days">Repetir días previos</ion-select-option>
+          </ion-select>
+        </ion-item>
+        
         <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="taskForm.invalid">
           {{ isEditMode ? 'Guardar Cambios' : 'Crear Tarea' }}
         </ion-button>

@@ -14,6 +14,7 @@ export interface Task {
   status: 'pending' | 'completed' | 'cancelled';
   userId: string;
   createdAt: Timestamp;
+  notificationType?: 'repeat-today' | 'repeat-days';
 }
 
 @Injectable({
@@ -31,7 +32,7 @@ export class TasksService {
     return user;
   }
 
-  async addTask(taskData: { title: string; description: string; dueDate: Date; priority: 'high' | 'medium' | 'low'; }): Promise<DocumentReference> {
+  async addTask(taskData: { title: string; description: string; dueDate: Date; priority: 'high' | 'medium' | 'low'; notificationType?: 'repeat-today' | 'repeat-days'; }): Promise<DocumentReference> {
     const user = await this.getCurrentUser();
     const tasksCollection = collection(this.firestore, 'tasks');
     return addDoc(tasksCollection, {
@@ -39,7 +40,8 @@ export class TasksService {
       dueDate: Timestamp.fromDate(taskData.dueDate),
       userId: user.uid,
       createdAt: Timestamp.now(),
-      status: 'pending'
+      status: 'pending',
+      notificationType: taskData.notificationType || 'repeat-today'
     });
   }
 
@@ -72,6 +74,9 @@ export class TasksService {
       delete (dataToUpdate as any).completed;
     }
     delete dataToUpdate.id;
+    if (!('notificationType' in dataToUpdate)) {
+      dataToUpdate.notificationType = 'repeat-today';
+    }
     return updateDoc(taskDocRef, dataToUpdate as any);
   }
 

@@ -54,6 +54,8 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
 
   private lastFilter: 'completed' | 'pending' | 'overdue' = 'pending';
 
+  showNotificationTypeSelect = false;
+
   constructor(
     private authService: AuthService,
     private tasksService: TasksService,
@@ -68,10 +70,15 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
   ) {
     addIcons({ trash, checkmarkCircle, add, logOutOutline, reorderTwoOutline, optionsOutline, timeOutline, notificationsOutline, ellipseOutline, closeCircleOutline });
     this.taskForm = this.fb.group({
-      title: ['', Validators.required],
+      title: ['', [Validators.required]],
       description: [''],
-      priority: ['medium', Validators.required],
-      dueDate: [new Date().toISOString(), Validators.required]
+      priority: ['medium', [Validators.required]],
+      dueDate: ['', [Validators.required]],
+      notificationType: ['repeat-today']
+    });
+
+    this.taskForm.get('dueDate')?.valueChanges.subscribe(() => {
+      this.updateNotificationTypeVisibility();
     });
   }
 
@@ -89,6 +96,9 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    this.taskForm.get('dueDate')?.valueChanges.subscribe(() => {
+      setTimeout(() => this.updateNotificationTypeVisibility(), 0);
+    });
     this.updateProgressCircle();
   }
 
@@ -197,6 +207,7 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async logout() {
+    await this.notificationsService.cancelAllNotifications();
     await this.menuCtrl.close();
     await this.authService.logout();
     this.router.navigateByUrl('/login', { replaceUrl: true });
@@ -239,23 +250,56 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
   openNewTaskModal() {
     this.isEditMode = false;
     this.currentTaskId = null;
+    const now = new Date();
     this.taskForm.reset({
+      title: '',
+      description: '',
       priority: 'medium',
-      dueDate: this.formatToIonicDateTime(new Date())
+      dueDate: this.formatToIonicDateTime(now),
+      notificationType: 'repeat-today'
     });
+    setTimeout(() => this.updateNotificationTypeVisibility(), 0);
     this.isModalOpen = true;
   }
 
   openEditTaskModal(task: Task) {
     this.isEditMode = true;
     this.currentTaskId = task.id!;
+    const dueDate = task.dueDate instanceof Date ? task.dueDate : task.dueDate.toDate();
     this.taskForm.setValue({
       title: task.title,
       description: task.description,
       priority: task.priority,
-      dueDate: this.formatToIonicDateTime(task.dueDate.toDate())
+      dueDate: this.formatToIonicDateTime(dueDate),
+      notificationType: task.notificationType || 'repeat-today'
     });
+    setTimeout(() => this.updateNotificationTypeVisibility(), 0);
     this.isModalOpen = true;
+  }
+
+  updateNotificationTypeVisibility() {
+    let dueDate = this.taskForm.value.dueDate;
+    console.log('DEBUG dueDate:', dueDate);
+    if (!dueDate) {
+      this.showNotificationTypeSelect = false;
+      return;
+    }
+    if (typeof dueDate === 'string') {
+      dueDate = new Date(dueDate);
+    }
+    if (!(dueDate instanceof Date) || isNaN(dueDate.getTime())) {
+      this.showNotificationTypeSelect = false;
+      return;
+    }
+    const now = new Date();
+    // Comparar solo la fecha (año, mes, día)
+    const isDifferentDay = dueDate.getFullYear() !== now.getFullYear() ||
+      dueDate.getMonth() !== now.getMonth() ||
+      dueDate.getDate() !== now.getDate();
+    this.showNotificationTypeSelect = isDifferentDay;
+    if (!this.showNotificationTypeSelect) {
+      this.taskForm.patchValue({ notificationType: 'repeat-today' });
+    }
   }
 
   async deleteTask(taskId: string) {
@@ -270,6 +314,7 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
             const loading = await this.loadingController.create();
             await loading.present();
             try {
+              await this.notificationsService.cancelAllNotifications();
               await this.tasksService.deleteTask(taskId);
               await this.showToast('Tarea eliminada con éxito');
             } catch (error) {
@@ -360,41 +405,69 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
 
     if (ev.detail.role === 'confirm' && ev.detail.data) {
       const { timeDiff, title, priority } = ev.detail.data;
-      
-      // Calcular horas antes según prioridad
+      const notificationType = this.taskForm.value.notificationType || 'repeat-today';
       let hoursBefore = 1;
       switch (priority) {
         case 'high': hoursBefore = 2; break;
         case 'medium': hoursBefore = 3; break;
         case 'low': hoursBefore = 4; break;
       }
-      
-      const scheduleDateBefore = new Date(Date.now() + timeDiff - (hoursBefore * 60 * 60 * 1000));
-      const scheduleDateExact = new Date(Date.now() + timeDiff);
-      
-      console.log('--- Modal Cerrado. Programando 2 notificaciones. ---');
-      try {
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              id: Math.floor(Math.random() * 10000), // Notificación ANTES
+      const now = new Date();
+      const dueDate = new Date(now.getTime() + timeDiff);
+      const notifications = [];
+
+      // Cancelar todas las notificaciones antes de programar nuevas
+      await this.notificationsService.cancelAllNotifications();
+
+      if (notificationType === 'repeat-today') {
+        // Solo programar notificaciones el día de la fecha límite
+        const isToday = dueDate.toDateString() === now.toDateString();
+        if (isToday) {
+          // Notificaciones cada X horas desde ahora hasta la fecha límite
+          for (let t = new Date(now.getTime() + hoursBefore * 60 * 60 * 1000); t < dueDate; t = new Date(t.getTime() + hoursBefore * 60 * 60 * 1000)) {
+            notifications.push({
+              id: Math.floor(Math.random() * 10000),
               title: '¡Recordatorio!',
               body: title,
-              schedule: { at: scheduleDateBefore }
-            },
-            {
-              id: Math.floor(Math.random() * 10000) + 1, // Notificación EXACTA
-              title: '¡Recordatorio!',
-              body: title,
-              schedule: { at: scheduleDateExact }
-            }
-          ]
+              schedule: { at: new Date(t) }
+            });
+          }
+          // Notificación exacta
+          notifications.push({
+            id: Math.floor(Math.random() * 10000) + 1,
+            title: '¡Recordatorio!',
+            body: title,
+            schedule: { at: dueDate }
+          });
+        }
+      } else if (notificationType === 'repeat-days') {
+        // Notificación diaria a la misma hora, solo en los días previos
+        const dayMs = 24 * 60 * 60 * 1000;
+        let t = new Date(dueDate.getTime() - dayMs);
+        while (t > now) {
+          notifications.push({
+            id: Math.floor(Math.random() * 10000),
+            title: '¡Recordatorio!',
+            body: title,
+            schedule: { at: new Date(t) }
+          });
+          t = new Date(t.getTime() - dayMs);
+        }
+        // Notificación exacta
+        notifications.push({
+          id: Math.floor(Math.random() * 10000) + 1,
+          title: '¡Recordatorio!',
+          body: title,
+          schedule: { at: dueDate }
         });
-        console.log('2 notificaciones programadas exitosamente.');
-        await this.showToast('Notificaciones programadas.', 'success');
-      } catch (e) {
-        console.error('Falló la programación de las notificaciones post-modal.', e);
-        await this.showToast('Las notificaciones no pudieron ser programadas.', 'danger');
+      }
+      if (notifications.length > 0) {
+        try {
+          await LocalNotifications.schedule({ notifications });
+          await this.showToast('Notificaciones programadas.', 'success');
+        } catch (e) {
+          await this.showToast('Las notificaciones no pudieron ser programadas.', 'danger');
+        }
       }
     }
   }
@@ -440,7 +513,8 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   public cancelTask(taskId: string) {
-    // ... (lógica existente)
+    this.notificationsService.cancelAllNotifications();
+    // ... (lógica existente de cancelación de la tarea)
   }
 
   public isOverdue(task: Task): boolean {

@@ -360,3 +360,33 @@ ion-label, .description, .due-date {
   font-weight: bold;
   box-shadow: 0 2px 12px #0006;
 }
+
+/* Mejorar visibilidad de ion-datetime en modo oscuro */
+ion-datetime, ion-modal ion-datetime, .datetime-content, .calendar-day, .calendar-day-active, .calendar-day-today {
+  background: #222 !important;
+  color: #fff !important;
+}
+ion-datetime .calendar-day, ion-datetime .calendar-day-active, ion-datetime .calendar-day-today {
+  background: #333 !important;
+  color: #fff !important;
+}
+ion-datetime .calendar-day-active {
+  background: #6c47ff !important;
+  color: #fff !important;
+}
+ion-datetime .calendar-day-today {
+  border: 1px solid #6c47ff !important;
+}
+ion-datetime .calendar-day[aria-selected="true"] {
+  background: #6c47ff !important;
+  color: #fff !important;
+}
+ion-datetime .calendar-day[aria-disabled="true"] {
+  color: #888 !important;
+}
+ion-datetime .calendar-month, ion-datetime .calendar-year {
+  color: #fff !important;
+}
+ion-datetime .calendar-day, ion-datetime .calendar-day-active, ion-datetime .calendar-day-today {
+  border-radius: 8px !important;
+}
