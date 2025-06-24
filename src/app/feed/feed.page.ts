@@ -8,10 +8,11 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { TasksService, Task } from '../services/tasks.service';
 import { NotificationsService } from '../services/notifications.service';
-import { trash, checkmarkCircle, add, logOutOutline, reorderTwoOutline, optionsOutline, timeOutline, notificationsOutline, ellipseOutline, closeCircleOutline } from 'ionicons/icons';
+import { trash, checkmarkCircle, add, logOutOutline, reorderTwoOutline, optionsOutline, timeOutline, notificationsOutline, ellipseOutline, closeCircleOutline, settingsOutline, exitOutline } from 'ionicons/icons';
 import { Timestamp } from 'firebase/firestore';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { OverlayEventDetail } from '@ionic/core/components';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-feed',
@@ -66,9 +67,10 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
     private loadingController: LoadingController,
     private alertController: AlertController,
     private menuCtrl: MenuController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private themeService: ThemeService
   ) {
-    addIcons({ trash, checkmarkCircle, add, logOutOutline, reorderTwoOutline, optionsOutline, timeOutline, notificationsOutline, ellipseOutline, closeCircleOutline });
+    addIcons({ trash, checkmarkCircle, add, logOutOutline, reorderTwoOutline, optionsOutline, timeOutline, notificationsOutline, ellipseOutline, closeCircleOutline, settingsOutline, exitOutline });
     this.taskForm = this.fb.group({
       title: ['', [Validators.required]],
       description: [''],
@@ -540,5 +542,9 @@ export class FeedPage implements OnInit, OnDestroy, AfterViewInit {
     // El resto para que sumen 100
     const percent = 100 - this.completedPercent - this.pendingPercent;
     return percent < 0 ? 0 : percent;
+  }
+
+  get progressColors() {
+    return this.themeService.getProgressBarColors();
   }
 }

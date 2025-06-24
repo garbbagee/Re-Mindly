@@ -11,6 +11,13 @@
     color: var(--ion-color-primary);
     text-align: center;
     margin-bottom: 8px;
+    animation: bombeo 1.2s infinite alternate cubic-bezier(.4,0,.2,1);
+  }
+
+  @keyframes bombeo {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); text-shadow: 0 0 16px #7c4dff88; }
+    100% { transform: scale(1); }
   }
 
   p {
@@ -40,4 +47,25 @@
     text-decoration: none;
     color: var(--ion-color-primary);
   }
+}
+
+ion-modal {
+  --width: 340px;
+  --height: 260px;
+  --border-radius: 18px;
+  --background: #181818;
+}
+ion-modal ion-toolbar {
+  --background: var(--ion-color-primary);
+  --color: #fff;
+}
+ion-modal ion-content {
+  background: #181818;
+}
+ion-modal ion-item {
+  background: #222;
+  border-radius: 8px;
+}
+ion-modal ion-button {
+  margin-top: 18px;
 } 

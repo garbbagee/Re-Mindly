@@ -1,0 +1,19 @@
+ion-content {
+  h2 {
+    margin-top: 16px;
+    margin-bottom: 12px;
+    font-size: 1.2em;
+    font-weight: 600;
+  }
+  .preview {
+    margin-left: 10px;
+  }
+  .color-dot {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin-right: 4px;
+    border: 1px solid #ccc;
+  }
+} 

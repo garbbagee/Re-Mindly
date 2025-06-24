@@ -6,7 +6,7 @@
 
 <ion-content class="ion-padding">
   <div class="login-container">
-    <h1 class="animate__animated animate__pulse">Re-Mindly</h1>
+    <h1 class="animate__animated animate__infinite animate__pulse">Re-Mindly</h1>
     <p>Tu asistente de tareas personal</p>
     <form [formGroup]="loginForm" (ngSubmit)="login()">
       <ion-item>
@@ -27,6 +27,10 @@
          <small *ngIf="loginForm.get('password')?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres.</small>
       </div>
 
+      <div class="ion-text-end ion-margin-bottom">
+        <a (click)="openResetPassword()" style="cursor:pointer;">¿Olvidaste tu contraseña?</a>
+      </div>
+
       <ion-button expand="block" type="submit" [disabled]="loginForm.invalid" class="ion-margin-top">
         Entrar
       </ion-button>
@@ -36,4 +40,28 @@
       <a [routerLink]="['/register']">¿No tienes cuenta? Regístrate</a>
     </div>
   </div>
+
+  <ion-modal [isOpen]="showResetPassword" (didDismiss)="closeResetPassword()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-title>Recuperar Contraseña</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeResetPassword()">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <form (ngSubmit)="sendResetPassword()">
+          <ion-item>
+            <ion-label position="floating">Correo Electrónico</ion-label>
+            <ion-input type="email" [(ngModel)]="resetEmail" name="resetEmail" required></ion-input>
+          </ion-item>
+          <ion-button expand="block" type="submit" [disabled]="!resetEmail || resetLoading">
+            {{ resetLoading ? 'Enviando...' : 'Enviar enlace de recuperación' }}
+          </ion-button>
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content> 

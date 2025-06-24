@@ -1,0 +1,36 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Personalización</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <h2>Colores de la barra de progreso</h2>
+  <ion-list>
+    <ion-radio-group [(ngModel)]="seleccionada" (ionChange)="cambiarPaleta(seleccionada)">
+      <ion-item *ngFor="let paleta of paletas">
+        <ion-label>
+          {{ paleta.nombre }}
+          <span class="preview">
+            <span *ngFor="let color of paleta.colores" [style.background]="color" class="color-dot"></span>
+          </span>
+        </ion-label>
+        <ion-radio slot="end" [value]="paleta.key"></ion-radio>
+      </ion-item>
+    </ion-radio-group>
+  </ion-list>
+</ion-content>
+
+<style>
+.preview {
+  margin-left: 10px;
+}
+.color-dot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin-right: 4px;
+  border: 1px solid #ccc;
+}
+</style> 

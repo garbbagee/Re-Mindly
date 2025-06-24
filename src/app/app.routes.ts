@@ -25,4 +25,8 @@ export const routes: Routes = [
     redirectTo: 'feed',
     pathMatch: 'full',
   },
+  {
+    path: 'personalizacion',
+    loadComponent: () => import('./personalizacion/personalizacion.page').then(m => m.PersonalizacionPage)
+  },
 ];

@@ -2,8 +2,9 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, LoadingController, ToastController } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, LoadingController, ToastController, IonModal, IonButtons } from '@ionic/angular/standalone';
 import { AuthService } from '../services/auth.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
@@ -21,11 +22,17 @@ import { AuthService } from '../services/auth.service';
     IonItem, 
     IonLabel, 
     IonInput, 
-    IonButton
+    IonButton,
+    IonModal,
+    IonButtons,
+    FormsModule
   ]
 })
 export class LoginPage {
   loginForm: FormGroup;
+  showResetPassword = false;
+  resetEmail = '';
+  resetLoading = false;
 
   constructor(
     private fb: FormBuilder,
@@ -63,5 +70,38 @@ export class LoginPage {
       });
       toast.present();
     }
+  }
+
+  async openResetPassword() {
+    this.showResetPassword = true;
+    this.resetEmail = '';
+  }
+
+  async sendResetPassword() {
+    if (!this.resetEmail) return;
+    this.resetLoading = true;
+    try {
+      await this.authService.resetPassword(this.resetEmail);
+      const toast = await this.toastController.create({
+        message: 'Se ha enviado un enlace de recuperación a tu correo.',
+        duration: 3500,
+        color: 'success'
+      });
+      toast.present();
+      this.showResetPassword = false;
+    } catch (error: any) {
+      const toast = await this.toastController.create({
+        message: 'No se pudo enviar el correo. Verifica el email.',
+        duration: 3500,
+        color: 'danger'
+      });
+      toast.present();
+    } finally {
+      this.resetLoading = false;
+    }
+  }
+
+  closeResetPassword() {
+    this.showResetPassword = false;
   }
 } 

@@ -10,8 +10,12 @@
         <ion-icon name="notifications-outline" slot="start"></ion-icon>
         <ion-label>Probar Notificación</ion-label>
       </ion-item>
-      <ion-item button (click)="logout()">
-        <ion-icon name="log-out-outline" slot="start"></ion-icon>
+      <ion-item button [routerLink]="['/personalizacion']">
+        <ion-icon name="settings-outline" slot="start"></ion-icon>
+        <ion-label>Personalización</ion-label>
+      </ion-item>
+      <ion-item button (click)="logout()" class="logout-item">
+        <ion-icon name="exit-outline" slot="start"></ion-icon>
         <ion-label>Cerrar Sesión</ion-label>
       </ion-item>
     </ion-list>
@@ -38,15 +42,21 @@
     <div class="progress-bar-section" *ngIf="tasksSubscription && dailyProgress.total > 0">
       <h2 class="progress-title">Progreso de Hoy</h2>
       <div class="progress-bar">
-        <div class="bar-segment completed" [ngStyle]="{ width: completedPercent + '%' }"></div>
-        <div class="bar-segment pending" [ngStyle]="{ width: pendingPercent + '%' }"></div>
-        <div class="bar-segment overdue" [ngStyle]="{ width: overduePercent + '%' }"></div>
+        <div class="bar-segment completed" [ngStyle]="{ width: completedPercent + '%', background: progressColors.completed }"></div>
+        <div class="bar-segment pending" [ngStyle]="{ width: pendingPercent + '%', background: progressColors.pending }"></div>
+        <div class="bar-segment overdue" [ngStyle]="{ width: overduePercent + '%', background: progressColors.overdue }"></div>
       </div>
       <!-- Indicadores de colores como tabs de navegación -->
       <div class="progress-bar-labels legend-tabs">
-        <span class="completed-label legend-item" [class.active]="taskFilter === 'completed'" (click)="setTaskFilter('completed')">{{ dailyProgress.completed }} Completadas</span>
-        <span class="pending-label legend-item" [class.active]="taskFilter === 'pending'" (click)="setTaskFilter('pending')">{{ dailyProgress.pending }} Pendientes</span>
-        <span class="overdue-label legend-item" [class.active]="taskFilter === 'overdue'" (click)="setTaskFilter('overdue')">{{ dailyProgress.overdue }} Atrasadas</span>
+        <span class="completed-label legend-item" [ngStyle]="taskFilter === 'completed' ? { color: progressColors.completed, background: progressColors.completed + '22', borderBottom: '3px solid ' + progressColors.completed } : { color: progressColors.completed }" [class.active]="taskFilter === 'completed'" (click)="setTaskFilter('completed')">
+          <span>{{ dailyProgress.completed }}</span> Completadas
+        </span>
+        <span class="pending-label legend-item" [ngStyle]="taskFilter === 'pending' ? { color: progressColors.pending, background: progressColors.pending + '22', borderBottom: '3px solid ' + progressColors.pending } : { color: progressColors.pending }" [class.active]="taskFilter === 'pending'" (click)="setTaskFilter('pending')">
+          <span>{{ dailyProgress.pending }}</span> Pendientes
+        </span>
+        <span class="overdue-label legend-item" [ngStyle]="taskFilter === 'overdue' ? { color: progressColors.overdue, background: progressColors.overdue + '22', borderBottom: '3px solid ' + progressColors.overdue } : { color: progressColors.overdue }" [class.active]="taskFilter === 'overdue'" (click)="setTaskFilter('overdue')">
+          <span>{{ dailyProgress.overdue }}</span> Atrasadas
+        </span>
       </div>
     </div>
 
